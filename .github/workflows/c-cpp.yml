@@ -17,8 +17,8 @@ jobs:
 
     - name: Install Dependencies
       run: |
-        sudo apt-get update
-        sudo apt-get install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf lib32readline-dev lib32z1-dev liblz4-tool libncurses5-dev libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev libtinfo5
+        sudo apt update
+        sudo apt install -y zip ccache bc cpio flex bison git python-is-python3 libc6 libc6-dev tar perl curl lz4
 
     - name: Download and Setup Zyc-Clang Toolchain
       run: |
@@ -50,7 +50,7 @@ jobs:
         make -C $(pwd) O=$(pwd)/out KCFLAGS=-w CONFIG_SECTION_MISMATCH_WARN_ONLY=y clean && make -C $(pwd) O=$(pwd)/out KCFLAGS=-w CONFIG_SECTION_MISMATCH_WARN_ONLY=y mrproper
         clear
 
-        make -s -C $(pwd) O=$(pwd)/out KCFLAGS=-w CONFIG_SECTION_MISMATCH_WARN_ONLY=y vendor/a23_eur_open_defconfig
+        make -s -C $(pwd) O=$(pwd)/out KCFLAGS=-w CONFIG_SECTION_MISMATCH_WARN_ONLY=y vendor/a23_open_eur_defconfig
         make -s -C $(pwd) O=$(pwd)/out KCFLAGS=-w CONFIG_SECTION_MISMATCH_WARN_ONLY=y -j$(nproc)
 
         cp out/arch/arm64/boot/Image $(pwd)/arch/arm64/boot/Image
@@ -62,8 +62,12 @@ jobs:
       run: |
         ./build_kernel.sh
 
-    - name: Upload Kernel Image Artifact
+    - name: Upload Kernel Artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: Kernel-Image-a23
-        path: arch/arm64/boot/Image
+        name: Kernel-a23-Build
+        path: |
+          arch/arm64/boot/Image
+          out/arch/arm64/boot/*.dtb
+          out/arch/arm64/boot/*.dtbo
+        if-no-files-found: warn
