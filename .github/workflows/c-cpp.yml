@@ -20,19 +20,25 @@ jobs:
         sudo apt update
         sudo apt install -y zip ccache bc cpio flex bison git python-is-python3 libc6 libc6-dev tar perl curl lz4
 
-    - name: Download and Setup Zyc-Clang Toolchain
+    - name: Download Toolchains (Clang & GCC)
       run: |
-        mkdir -p $HOME/zyc-clang
-        git clone https://github.com/ZyCromerZ/Clang.git -b 14 $HOME/zyc-clang --depth=1
+        # Download Clang 11
+        git clone --depth=1 -b clang-11 https://github.com/rsuplaygrnd/toolchains.git $HOME/clang-11
+        
+        # Download GCC
+        git clone --depth=1 -b gcc https://github.com/blxyzY/toolchain.git $HOME/gcc
 
     - name: Overwrite and Create build_kernel.sh
       run: |
         cat << 'EOF' > build_kernel.sh
         #!/bin/bash
 
-        export TC=$HOME/zyc-clang
+        export TC=$HOME/clang-11
+        export GCC=$HOME/gcc
 
-        export CROSS_COMPILE=$TC/bin/aarch64-linux-gnu-
+        # Setup Compiler & Toolchain Path
+        export CROSS_COMPILE=$GCC/bin/aarch64-linux-android-
+        export CROSS_COMPILE_ARM32=$GCC/bin/arm-linux-androideabi-
         export LD=$TC/bin/ld.lld
         export OBJCOPY=$TC/bin/llvm-objcopy
         export AS=$TC/bin/llvm-as
@@ -47,12 +53,15 @@ jobs:
         export KCFLAGS=-w
         export CONFIG_SECTION_MISMATCH_WARN_ONLY=y
 
+        # Clean up
         make -C $(pwd) O=$(pwd)/out KCFLAGS=-w CONFIG_SECTION_MISMATCH_WARN_ONLY=y clean && make -C $(pwd) O=$(pwd)/out KCFLAGS=-w CONFIG_SECTION_MISMATCH_WARN_ONLY=y mrproper
         clear
 
+        # Configure & Build
         make -s -C $(pwd) O=$(pwd)/out KCFLAGS=-w CONFIG_SECTION_MISMATCH_WARN_ONLY=y vendor/a23_open_eur_defconfig
         make -s -C $(pwd) O=$(pwd)/out KCFLAGS=-w CONFIG_SECTION_MISMATCH_WARN_ONLY=y -j$(nproc)
 
+        # Copy Output
         cp out/arch/arm64/boot/Image $(pwd)/arch/arm64/boot/Image
         EOF
         
