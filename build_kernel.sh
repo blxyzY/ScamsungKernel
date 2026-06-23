@@ -1,20 +1,27 @@
 #!/bin/bash
 
-set -e
+export TC=/home/vigus/zyc-clang
 
-KERNEL_DIR=$(pwd)
-OUT_DIR=$KERNEL_DIR/out
-GCC_64=$KERNEL_DIR/../toolchain/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin/aarch64-linux-android-
-GCC_32=$KERNEL_DIR/../toolchain/gcc/linux-x86/arm/arm-linux-androideabi-4.9/bin/arm-linux-androideabi-
-CLANG_PATH=$KERNEL_DIR/../toolchain/clang/host/linux-x86/clang-r383902/bin
-KERNEL_MAKE_ENV="DTC_EXT=$(pwd)/tools/dtc CONFIG_BUILD_ARM64_DT_OVERLAY=y"
-
+export CROSS_COMPILE=$TC/bin/aarch64-linux-gnu-
+export LD=$TC/bin/ld.lld
+export OBJCOPY=$TC/bin/llvm-objcopy
+export AS=$TC/bin/llvm-as
+export NM=$TC/bin/llvm-nm
+export STRIP=$TC/bin/llvm-strip
+export OBJDUMP=$TC/bin/llvm-objdump
+export READELF=$TC/bin/llvm-readelf
+export CC=$TC/bin/clang
+export CLANG_TRIPLE=aarch64-linux-gnu-
 export ARCH=arm64
-export SUBARCH=arm64
-export PATH=$CLANG_PATH:$PATH
+#export ANDROID_MAJOR_VERSION=r
 
-make -j12 O=$OUT_DIR ARCH=arm64 CROSS_COMPILE=$GCC_64 CROSS_COMPILE_ARM32=$GCC_32 CC=clang CLANG_TRIPLE=aarch64-linux-gnu- vendor/a23_eur_open_defconfig
-make -j12 O=$OUT_DIR ARCH=arm64 CROSS_COMPILE=$GCC_64 CROSS_COMPILE_ARM32=$GCC_32 CC=clang CLANG_TRIPLE=aarch64-linux-gnu-
+export KCFLAGS=-w
+export CONFIG_SECTION_MISMATCH_WARN_ONLY=y
 
-cp $OUT_DIR/arch/arm64/boot/Image $KERNEL_DIR/arch/arm64/boot/Image
-cp $OUT_DIR/arch/arm64/boot/Image $KERNEL_DIR/arch/arm64/boot/Image.gz
+make -C $(pwd) O=$(pwd)/out KCFLAGS=-w CONFIG_SECTION_MISMATCH_WARN_ONLY=y clean && make -C $(pwd) O=$(pwd)/out KCFLAGS=-w CONFIG_SECTION_MISMATCH_WARN_ONLY=y mrproper
+clear
+
+make -s -C $(pwd) O=$(pwd)/out KCFLAGS=-w CONFIG_SECTION_MISMATCH_WARN_ONLY=y vendor/a23_eur_open_defconfig
+make -s -C $(pwd) O=$(pwd)/out KCFLAGS=-w CONFIG_SECTION_MISMATCH_WARN_ONLY=y -j$(nproc)
+
+cp out/arch/arm64/boot/Image $(pwd)/arch/arm64/boot/Image
